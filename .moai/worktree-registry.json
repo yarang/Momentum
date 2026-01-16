@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "worktrees": [],
+  "config": {
+    "worktree_root": "~/worktrees/Momentum",
+    "auto_sync": true,
+    "cleanup_merged": false,
+    "base_branch": "main"
+  },
+  "created_at": "2026-01-17T00:00:00Z"
+}
