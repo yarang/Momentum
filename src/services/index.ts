@@ -2,11 +2,13 @@
  * Services Module
  *
  * External service integrations for calendar, payment, shopping, and communication apps.
- * TODO: Implement service integrations as needed
  */
 
 // Export native services
 export * from './native';
+
+// Export database services
+export * from './database';
 
 // Placeholder for future service integrations
 // - Calendar API integrations (Google Calendar, Apple Calendar)
