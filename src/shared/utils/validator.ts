@@ -26,7 +26,20 @@ export function isValidEmail(email: string): boolean {
     return false;
   }
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  return emailRegex.test(email.trim());
+  const trimmed = email.trim();
+  if (!emailRegex.test(trimmed)) {
+    return false;
+  }
+  // Reject consecutive dots
+  if (trimmed.includes('..') || trimmed.startsWith('.') || trimmed.endsWith('.')) {
+    return false;
+  }
+  // Reject consecutive dots in domain part
+  const [, domain] = trimmed.split('@');
+  if (domain?.includes('..')) {
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -67,8 +80,11 @@ export function isValidCoordinates(latitude: number, longitude: number): boolean
  * @returns true if valid currency code
  */
 export function isValidCurrency(currency: string): boolean {
+  if (!currency || currency.trim().length === 0) {
+    return false;
+  }
   const validCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'KRW', 'CNY', 'INR', 'AUD', 'CAD'];
-  return validCurrencies.includes(currency.toUpperCase());
+  return validCurrencies.includes(currency.trim().toUpperCase());
 }
 
 /**
@@ -109,7 +125,10 @@ export function sanitizeString(input: string, maxLength: number = 1000): string 
   }
 
   let sanitized = input.trim();
+  // Remove control characters
   sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, '');
+  // Collapse multiple spaces into one
+  sanitized = sanitized.replace(/\s+/g, ' ');
 
   if (maxLength > 0 && sanitized.length > maxLength) {
     sanitized = sanitized.substring(0, maxLength);
