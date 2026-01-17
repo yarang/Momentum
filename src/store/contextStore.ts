@@ -3,11 +3,14 @@
  *
  * Zustand store for managing context state in the Momentum application.
  * Handles captured contexts from screenshots, chat, location, and voice inputs.
+ * Integrated with SQLite database for persistent storage.
  */
 
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { devtools } from 'zustand/middleware';
+import { v4 as uuidv4 } from 'uuid';
 import { Context, ContextData, ContextFilterOptions } from '@/shared/models';
+import { getDatabase, getContextDAO } from '@/services/database';
 
 /**
  * Context store state interface
@@ -21,9 +24,13 @@ interface ContextState {
   isLoading: boolean;
   /** Error state */
   error: string | null;
+  /** Database initialized flag */
+  isDbInitialized: boolean;
 
   // Actions
-  /** Load all contexts */
+  /** Initialize database connection */
+  initializeDatabase: () => Promise<void>;
+  /** Load all contexts from database */
   loadContexts: () => Promise<void>;
   /** Load a single context by ID */
   loadContext: (id: string) => Promise<void>;
@@ -51,187 +58,277 @@ interface ContextState {
  */
 export const useContextStore = create<ContextState>()(
   devtools(
-    persist(
-      (set, get) => ({
-        // Initial state
-        contexts: [],
-        selectedContext: null,
-        isLoading: false,
-        error: null,
+    (set, get) => ({
+      // Initial state
+      contexts: [],
+      selectedContext: null,
+      isLoading: false,
+      error: null,
+      isDbInitialized: false,
 
-        // Actions
-        loadContexts: async () => {
-          set({ isLoading: true, error: null });
-          try {
-            // TODO: Implement actual data loading from storage/database
-            // For now, this is just a placeholder
-            const contexts: Context[] = [];
-            set({ contexts, isLoading: false });
-          } catch (error) {
-            set({
-              error: error instanceof Error ? error.message : 'Failed to load contexts',
-              isLoading: false,
-            });
-          }
-        },
+      // Initialize database
+      initializeDatabase: async () => {
+        if (get().isDbInitialized) {
+          return;
+        }
 
-        loadContext: async (id: string) => {
-          set({ isLoading: true, error: null });
-          try {
-            // TODO: Implement actual context loading from storage/database
-            const context = get().contexts.find((c) => c.id === id) || null;
-            set({ selectedContext: context, isLoading: false });
-          } catch (error) {
-            set({
-              error: error instanceof Error ? error.message : 'Failed to load context',
-              isLoading: false,
-            });
-          }
-        },
+        set({ isLoading: true, error: null });
+        try {
+          const db = getDatabase({
+            name: 'momentum.db',
+            encryptionKey: 'momentum-secure-key-2025', // TODO: Use secure key storage
+            version: 1,
+          });
+          await db.initialize();
+          set({ isDbInitialized: true, isLoading: false });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to initialize database',
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
 
-        addContext: async (data: ContextData) => {
-          set({ isLoading: true, error: null });
-          try {
-            // TODO: Implement actual context creation with storage/database
-            const newContext: Context = {
-              id: `ctx_${Date.now()}`,
-              data,
-              entities: [],
-              status: 'pending',
-              createdAt: Date.now(),
-              updatedAt: Date.now(),
-            };
-            set((state) => ({
-              contexts: [newContext, ...state.contexts],
-              isLoading: false,
-            }));
-            return newContext;
-          } catch (error) {
-            set({
-              error: error instanceof Error ? error.message : 'Failed to add context',
-              isLoading: false,
-            });
-            throw error;
-          }
-        },
+      // Load contexts from database
+      loadContexts: async () => {
+        const state = get();
 
-        updateContext: async (id: string, data: Partial<ContextData>) => {
-          set({ isLoading: true, error: null });
-          try {
-            // TODO: Implement actual context update with storage/database
-            set((state) => ({
-              contexts: state.contexts.map((context) =>
-                context.id === id
-                  ? {
-                      ...context,
-                      data: { ...context.data, ...data },
-                      updatedAt: Date.now(),
-                    }
-                  : context
-              ),
-              isLoading: false,
-            }));
-            const updatedContext = get().contexts.find((c) => c.id === id);
-            if (!updatedContext) {
-              throw new Error('Context not found');
-            }
-            return updatedContext;
-          } catch (error) {
-            set({
-              error: error instanceof Error ? error.message : 'Failed to update context',
-              isLoading: false,
-            });
-            throw error;
-          }
-        },
+        // Auto-initialize database if not initialized
+        if (!state.isDbInitialized) {
+          await state.initializeDatabase();
+        }
 
-        deleteContext: async (id: string) => {
-          set({ isLoading: true, error: null });
-          try {
-            // TODO: Implement actual context deletion from storage/database
-            set((state) => ({
-              contexts: state.contexts.filter((context) => context.id !== id),
-              selectedContext:
-                state.selectedContext?.id === id ? null : state.selectedContext,
-              isLoading: false,
-            }));
-          } catch (error) {
-            set({
-              error: error instanceof Error ? error.message : 'Failed to delete context',
-              isLoading: false,
-            });
-            throw error;
-          }
-        },
+        set({ isLoading: true, error: null });
+        try {
+          const db = getDatabase({
+            name: 'momentum.db',
+            encryptionKey: 'momentum-secure-key-2025',
+            version: 1,
+          });
+          const contextDAO = getContextDAO(db);
+          const contexts = await contextDAO.getAll({
+            orderBy: 'created_at',
+            order: 'DESC',
+          });
+          set({ contexts, isLoading: false });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to load contexts',
+            isLoading: false,
+          });
+        }
+      },
 
-        setSelectedContext: (context: Context | null) => {
-          set({ selectedContext: context });
-        },
+      // Load a single context
+      loadContext: async (id: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const db = getDatabase({
+            name: 'momentum.db',
+            encryptionKey: 'momentum-secure-key-2025',
+            version: 1,
+          });
+          const contextDAO = getContextDAO(db);
+          const context = await contextDAO.getById(id);
 
-        filterContexts: (options: ContextFilterOptions) => {
-          let filtered = [...get().contexts];
+          set({
+            selectedContext: context || null,
+            isLoading: false,
+          });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to load context',
+            isLoading: false,
+          });
+        }
+      },
 
-          if (options.source) {
-            filtered = filtered.filter((context) => context.data.source === options.source);
-          }
+      // Add a new context
+      addContext: async (data: ContextData) => {
+        set({ isLoading: true, error: null });
+        try {
+          const db = getDatabase({
+            name: 'momentum.db',
+            encryptionKey: 'momentum-secure-key-2025',
+            version: 1,
+          });
+          const contextDAO = getContextDAO(db);
 
-          if (options.status) {
-            filtered = filtered.filter((context) => context.status === options.status);
-          }
+          const newContext: Context = {
+            id: uuidv4(),
+            data,
+            entities: [], // Entities will be added by analysis service
+            status: 'pending',
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
 
-          if (options.dateRange) {
-            filtered = filtered.filter((context) => {
-              return (
-                context.createdAt >= options.dateRange!.start &&
-                context.createdAt <= options.dateRange!.end
-              );
-            });
-          }
+          await contextDAO.insert(newContext);
 
-          // Apply pagination
-          if (options.offset) {
-            filtered = filtered.slice(options.offset);
-          }
-          if (options.limit) {
-            filtered = filtered.slice(0, options.limit);
+          set((state) => ({
+            contexts: [newContext, ...state.contexts],
+            isLoading: false,
+          }));
+
+          return newContext;
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to add context',
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      // Update a context
+      updateContext: async (id: string, data: Partial<ContextData>) => {
+        set({ isLoading: true, error: null });
+        try {
+          const db = getDatabase({
+            name: 'momentum.db',
+            encryptionKey: 'momentum-secure-key-2025',
+            version: 1,
+          });
+          const contextDAO = getContextDAO(db);
+
+          // Get existing context
+          const existingContext = await contextDAO.getById(id);
+          if (!existingContext) {
+            throw new Error('Context not found');
           }
 
-          return filtered;
-        },
+          // Merge data
+          const updatedData = { ...existingContext.data, ...data };
+          const updatedContext: Context = {
+            ...existingContext,
+            data: updatedData,
+            updatedAt: Date.now(),
+          };
 
-        updateContextStatus: async (id: string, status: Context['status']) => {
-          set({ isLoading: true, error: null });
-          try {
-            // TODO: Implement actual status update with storage/database
-            set((state) => ({
-              contexts: state.contexts.map((context) =>
-                context.id === id
-                  ? { ...context, status, updatedAt: Date.now() }
-                  : context
-              ),
-              isLoading: false,
-            }));
-          } catch (error) {
-            set({
-              error: error instanceof Error ? error.message : 'Failed to update status',
-              isLoading: false,
-            });
-            throw error;
-          }
-        },
+          await contextDAO.updateData(id, updatedData, updatedContext.entities);
 
-        clearError: () => {
-          set({ error: null });
-        },
-      }),
-      {
-        name: 'momentum-context-store',
-        // Only persist contexts, not loading/error states
-        partialize: (state) => ({
-          contexts: state.contexts,
-        }),
-      }
-    ),
+          set((state) => ({
+            contexts: state.contexts.map((context) =>
+              context.id === id ? updatedContext : context
+            ),
+            selectedContext:
+              state.selectedContext?.id === id ? updatedContext : state.selectedContext,
+            isLoading: false,
+          }));
+
+          return updatedContext;
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to update context',
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      // Delete a context
+      deleteContext: async (id: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const db = getDatabase({
+            name: 'momentum.db',
+            encryptionKey: 'momentum-secure-key-2025',
+            version: 1,
+          });
+          const contextDAO = getContextDAO(db);
+          await contextDAO.delete(id);
+
+          set((state) => ({
+            contexts: state.contexts.filter((context) => context.id !== id),
+            selectedContext:
+              state.selectedContext?.id === id ? null : state.selectedContext,
+            isLoading: false,
+          }));
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to delete context',
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      // Set selected context
+      setSelectedContext: (context: Context | null) => {
+        set({ selectedContext: context });
+      },
+
+      // Filter contexts
+      filterContexts: (options: ContextFilterOptions) => {
+        let filtered = [...get().contexts];
+
+        if (options.source) {
+          filtered = filtered.filter((context) => context.data.source === options.source);
+        }
+
+        if (options.status) {
+          filtered = filtered.filter((context) => context.status === options.status);
+        }
+
+        if (options.dateRange) {
+          filtered = filtered.filter((context) => {
+            return (
+              context.createdAt >= options.dateRange!.start &&
+              context.createdAt <= options.dateRange!.end
+            );
+          });
+        }
+
+        // Apply pagination
+        if (options.offset) {
+          filtered = filtered.slice(options.offset);
+        }
+        if (options.limit) {
+          filtered = filtered.slice(0, options.limit);
+        }
+
+        return filtered;
+      },
+
+      // Update context status
+      updateContextStatus: async (id: string, status: Context['status']) => {
+        set({ isLoading: true, error: null });
+        try {
+          const db = getDatabase({
+            name: 'momentum.db',
+            encryptionKey: 'momentum-secure-key-2025',
+            version: 1,
+          });
+          const contextDAO = getContextDAO(db);
+          await contextDAO.updateStatus(id, status);
+
+          set((state) => ({
+            contexts: state.contexts.map((context) =>
+              context.id === id
+                ? { ...context, status, updatedAt: Date.now() }
+                : context
+            ),
+            selectedContext:
+              state.selectedContext?.id === id
+                ? { ...state.selectedContext, status, updatedAt: Date.now() }
+                : state.selectedContext,
+            isLoading: false,
+          }));
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to update status',
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      // Clear error
+      clearError: () => {
+        set({ error: null });
+      },
+    }),
     { name: 'ContextStore' }
   )
 );
