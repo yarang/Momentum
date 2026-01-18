@@ -89,8 +89,10 @@ export class ContextCaptureService implements IContextCapture {
         };
       }
 
-      // TODO: Implement OCR using react-native-tesseract-ocr or similar
-      // For MVP, create a basic context with the image path
+      // Extract text using OCR
+      const { text: extractedText, confidence: ocrConfidence } =
+        await this.extractTextFromImage(imagePath, options?.enableOCR !== false);
+
       const context: Context = {
         id: uuidv4(),
         type: 'screenshot' as ContextType,
@@ -98,11 +100,11 @@ export class ContextCaptureService implements IContextCapture {
         data: {
           imagePath,
           timestamp: new Date().toISOString(),
-          extractedText: '', // TODO: Run OCR here
+          extractedText,
         },
         extractedEntities: [],
         suggestedIntent: null,
-        confidence: 0.5, // Low confidence without OCR
+        confidence: ocrConfidence || 0.5,
         createdAt: new Date().toISOString(),
         status: 'pending',
         tags: options?.tags || [],

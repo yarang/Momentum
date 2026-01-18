@@ -6,3 +6,4 @@
 
 export * from './IContextCapture';
 export * from './ContextCaptureService';
+export * from './OCRService';
