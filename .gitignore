@@ -201,3 +201,5 @@ android/.gradle/
 android/?/
 android/local.properties
 android/get-docker.sh
+MomentumExpo/
+MomentumExpo/node_modules
