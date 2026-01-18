@@ -1,6 +1,17 @@
 {
   "version": "1.0.0",
-  "worktrees": [],
+  "worktrees": [
+    {
+      "id": "SPEC-001",
+      "spec_id": "SPEC-001",
+      "path": "/home/ubuntu/worktrees/Momentum/SPEC-001-context-capture",
+      "branch": "feature/SPEC-001-context-capture",
+      "description": "Context Capture - 스크린샷 캡처, OCR, 텍스트 분석",
+      "created_at": "2026-01-17T00:20:00Z",
+      "last_sync": null,
+      "status": "active"
+    }
+  ],
   "config": {
     "worktree_root": "~/worktrees/Momentum",
     "auto_sync": true,
