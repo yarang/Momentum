@@ -840,7 +840,279 @@ await notificationService.scheduleTaskReminders(task);
 
 ## Feature APIs
 
-### Task Management API
+### Social Event Management API
+
+경조사 이벤트 관리를 위한 고수준 API입니다.
+
+#### SocialEventService
+
+##### Interface
+
+```typescript
+interface ISocialEventService {
+  // CRUD operations
+  createEvent(input: SocialEventCreateInput): Promise<SocialEvent>;
+  updateEvent(id: string, updates: SocialEventUpdateInput): Promise<SocialEvent>;
+  deleteEvent(id: string): Promise<void>;
+  getEvent(id: string): Promise<SocialEvent | null>;
+  listEvents(filter?: SocialEventFilter): Promise<SocialEvent[]>;
+
+  // Event extraction
+  extractFromText(text: string): Promise<ExtractionResult>;
+  extractFromImage(imagePath: string): Promise<ExtractionResult>;
+
+  // Calendar integration
+  addToCalendar(event: SocialEvent): Promise<string | null>;
+  updateCalendarEvent(calendarId: string, event: SocialEvent): Promise<string | null>;
+  removeFromCalendar(calendarId: string): Promise<boolean>;
+  syncWithCalendar(event: SocialEvent): Promise<string | null>;
+
+  // Statistics
+  getStatistics(): Promise<SocialEventStatistics>;
+}
+```
+
+##### Types
+
+```typescript
+type SocialEventType =
+  | 'wedding'
+  | 'funeral'
+  | 'first_birthday'
+  | 'sixtieth_birthday'
+  | 'birthday'
+  | 'graduation'
+  | 'etc';
+
+type SocialEventStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
+type SocialEventPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+interface SocialEvent {
+  id: string;
+  type: SocialEventType;
+  status: SocialEventStatus;
+  priority: SocialEventPriority;
+  title: string;
+  description: string | null;
+  eventDate: Date;
+  location: SocialEventLocation | null;
+  contact: SocialEventContact | null;
+  giftAmount: number | null;
+  giftSent: boolean;
+  giftSentDate: Date | null;
+  reminderSet: boolean;
+  reminderDate: Date | null;
+  calendarEventId: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface SocialEventLocation {
+  name: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+interface SocialEventContact {
+  name: string;
+  phone: string;
+  relationship: RelationshipType;
+}
+
+type RelationshipType =
+  | 'family'
+  | 'relative'
+  | 'friend'
+  | 'college_friend'
+  | 'high_school_friend'
+  | 'colleague'
+  | 'boss'
+  | 'business_client'
+  | 'neighbor'
+  | 'etc';
+
+interface ExtractionResult {
+  type: SocialEventType;
+  entities: ExtractedEntities;
+  priority: SocialEventPriority;
+  confidence: number;
+}
+
+interface ExtractedEntities {
+  dates: Date[];
+  locations: string[];
+  phoneNumbers: string[];
+  names: string[];
+  amounts: number[];
+  relationships: string[];
+}
+```
+
+##### Usage Example
+
+```typescript
+import { SocialEventService } from '@/services/socialEvent/SocialEventService';
+
+const service = new SocialEventService();
+
+// Extract from text
+const result = await service.extractFromText(
+  "다음 달 15일 오후 2시에 결혼식이 있습니다. 그랜드 웨딩홀에서 진행합니다."
+);
+
+console.log('Event Type:', result.type); // 'wedding'
+console.log('Dates:', result.entities.dates); // [Date object]
+console.log('Locations:', result.entities.locations); // ['그랜드 웨딩홀']
+console.log('Priority:', result.priority); // 'medium'
+
+// Create event from extraction
+const event = await service.createEvent({
+  type: result.type,
+  title: '결혼식',
+  eventDate: result.entities.dates[0],
+  priority: result.priority,
+});
+
+// Sync with calendar
+const calendarId = await service.addToCalendar(event);
+console.log('Calendar Event ID:', calendarId);
+```
+
+---
+
+### Calendar Service API
+
+캘린더 연동을 위한 API입니다.
+
+#### CalendarService
+
+##### Interface
+
+```typescript
+interface ICalendarService {
+  // Permissions
+  requestPermissions(): Promise<boolean>;
+
+  // Event management
+  addEvent(event: SocialEvent): Promise<string | null>;
+  updateEvent(calendarId: string, event: SocialEvent): Promise<string | null>;
+  removeEvent(calendarId: string): Promise<boolean>;
+  findEvents(startDate: Date, endDate: Date): Promise<any[]>;
+
+  // Sync
+  syncEvent(event: SocialEvent): Promise<string | null>;
+}
+```
+
+##### Usage Example
+
+```typescript
+import { CalendarService } from '@/services/calendar/CalendarService';
+
+const calendarService = new CalendarService();
+
+// Request permissions
+const hasPermission = await calendarService.requestPermissions();
+if (!hasPermission) {
+  // Show permission request UI
+}
+
+// Add event to calendar
+const calendarId = await calendarService.addEvent(socialEvent);
+
+// Update event
+await calendarService.updateEvent(calendarId, updatedEvent);
+
+// Find events in range
+const events = await calendarService.findEvents(
+  new Date('2025-01-01'),
+  new Date('2025-12-31')
+);
+```
+
+---
+
+### Payment Deep Link API
+
+송금 앱 딥링크 생성을 위한 API입니다.
+
+#### PaymentDeepLinkService
+
+##### Interface
+
+```typescript
+interface IPaymentDeepLinkService {
+  // Deep link creation
+  createKakaoPayLink(receiver: PaymentReceiver): string;
+  createTossLink(receiver: PaymentReceiver): string;
+  createNaverPayLink(receiver: PaymentReceiver): string;
+
+  // Payment links
+  createPaymentLinks(options: PaymentOptions): PaymentLinks;
+
+  // Recommendations
+  getRecommendedAmount(options: RecommendationOptions): number;
+}
+```
+
+##### Types
+
+```typescript
+interface PaymentReceiver {
+  receiverName: string;
+  amount: number;
+  message: string;
+}
+
+interface PaymentLinks {
+  kakaoPay: string;
+  toss: string;
+  naverPay: string;
+}
+
+interface RecommendationOptions {
+  eventType: SocialEventType;
+  relationship: RelationshipType;
+}
+
+interface PaymentOptions {
+  eventType: SocialEventType;
+  amount: number;
+  message: string;
+}
+```
+
+##### Usage Example
+
+```typescript
+import { PaymentDeepLinkService } from '@/services/payment/PaymentDeepLinkService';
+
+const paymentService = new PaymentDeepLinkService();
+
+// Get recommended amount
+const recommended = paymentService.getRecommendedAmount({
+  eventType: 'wedding',
+  relationship: 'colleague',
+});
+console.log('Recommended:', recommended); // 100000 (10만원)
+
+// Create payment links
+const links = paymentService.createPaymentLinks({
+  eventType: 'wedding',
+  amount: 100000,
+  message: '축하합니다!',
+});
+
+console.log('KakaoPay:', links.kakaoPay);
+console.log('Toss:', links.toss);
+console.log('NaverPay:', links.naverPay);
+```
+
+---
+
+## Task Management API
 
 앱의 업무 관리 기능을 위한 고수준 API
 
