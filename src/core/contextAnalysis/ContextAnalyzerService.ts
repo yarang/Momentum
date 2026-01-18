@@ -15,7 +15,6 @@ import {
 } from '@/shared/models';
 import { parseDate } from '@/shared/utils/dateParser';
 import {
-  analyzeKeywords,
   extractAmounts,
   extractPhoneNumbers,
   extractEmails,
@@ -472,7 +471,7 @@ export class ContextAnalyzerService implements IContextAnalyzer {
   /**
    * Find related contexts
    */
-  async findRelated(context: Context, limit = 5): Promise<RelatedContext[]> {
+  async findRelated(context: Context, _limit = 5): Promise<RelatedContext[]> {
     // TODO: Implement similarity-based matching
     // For MVP, return empty array
     return [];
@@ -574,7 +573,7 @@ export class ContextAnalyzerService implements IContextAnalyzer {
   /**
    * Helper: Calculate task priority from text and date
    */
-  private calculatePriority(text: string, dateEntity: Entity): TaskPriority {
+  private calculatePriority(text: string, _dateEntity: Entity): TaskPriority {
     const urgency = detectUrgency(text);
     if (urgency >= 4) return 'high';
     if (urgency >= 3) return 'medium';
