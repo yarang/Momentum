@@ -7,7 +7,7 @@
  * @see https://firebase.google.com/docs/docs/ml-kit/android/recognize-text
  */
 
-import { NativeModules, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { MLKitTextRecognition } from '@react-native-ml-kit/text-recognition';
 
 /**
@@ -184,7 +184,6 @@ export class OCRService {
     imagePaths: string[],
     options?: OCROptions
   ): Promise<OCRResult[]> {
-    const results: OCRResult[] = [];
     const startTime = Date.now();
 
     try {
@@ -193,7 +192,7 @@ export class OCRService {
 
       // Process images in parallel
       const promises = imagePaths.map((imagePath) =>
-        this.recognizeText(imagePath, options).catch((error) => ({
+        this.recognizeText(imagePath, options).catch((_error) => ({
           text: '',
           confidence: 0,
           isKorean: false,
@@ -240,7 +239,7 @@ export class OCRService {
    * Clean up and normalize OCR output
    */
   normalizeText(text: string): string {
-    if (!text) return '';
+    if (!text) {return '';}
 
     // Remove extra whitespace
     const cleaned = text.replace(/\s+/g, ' ').trim();

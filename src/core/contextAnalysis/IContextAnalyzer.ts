@@ -5,7 +5,7 @@
  * Implementations handle intent classification, entity extraction, and action suggestion.
  */
 
-import { Context, Entity, Action, Task } from '@/shared/models';
+import { Context, Entity, Action } from '@/shared/models';
 
 /**
  * Intent classification result

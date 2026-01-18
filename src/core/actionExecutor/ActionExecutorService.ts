@@ -436,7 +436,7 @@ export class ActionExecutorService
     productName: string,
     price: number,
     currency: string,
-    options?: {
+    _options?: {
       productUrl?: string;
       targetPrice?: number;
     }
@@ -521,11 +521,15 @@ export class ActionExecutorService
         description: options?.description || '',
         status: 'pending',
         priority: this.calculatePriorityFromDeadline(deadline),
+        category: 'other',
         deadline,
         tags: options?.tags || [],
         entities: [],
+        sourceContextId: `action_${Date.now()}`,
+        actions: [],
         createdAt: Date.now(),
         updatedAt: Date.now(),
+        notified: false,
       };
 
       return {
@@ -764,9 +768,14 @@ export class ActionExecutorService
     const destination = (locationEntity?.value as string) || action.title;
 
     return this.openNavigation(destination, {
-      latitude: action.metadata?.latitude as number,
-      longitude: action.metadata?.longitude as number,
-      transportMode: action.metadata?.transportMode as any,
+      latitude: action.metadata?.latitude as number | undefined,
+      longitude: action.metadata?.longitude as number | undefined,
+      transportMode: action.metadata?.transportMode as
+        | 'driving'
+        | 'walking'
+        | 'transit'
+        | 'cycling'
+        | undefined,
     });
   }
 
@@ -787,7 +796,7 @@ export class ActionExecutorService
 
     return this.send(
       personEntity.value as string,
-      action.metadata?.commType as any || 'email',
+      (action.metadata?.commType as 'email' | 'sms' | 'chat' | 'call') || 'email',
       {
         messageTemplate: action.metadata?.messageTemplate as string,
       }
@@ -847,8 +856,8 @@ export class ActionExecutorService
     const now = Date.now();
     const daysUntilDeadline = (deadline - now) / (1000 * 60 * 60 * 24);
 
-    if (daysUntilDeadline <= 2) return 'high';
-    if (daysUntilDeadline <= 7) return 'medium';
+    if (daysUntilDeadline <= 2) {return 'high';}
+    if (daysUntilDeadline <= 7) {return 'medium';}
     return 'low';
   }
 }
