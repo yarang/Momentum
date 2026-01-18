@@ -170,7 +170,7 @@ export class ContextAnalyzerService implements IContextAnalyzer {
   }
 
   /**
-   * Classify intent from context
+   * Classify intent from context using BERT
    */
   async classifyIntent(
     context: Context
@@ -178,7 +178,42 @@ export class ContextAnalyzerService implements IContextAnalyzer {
     // Extract text content from context data
     const text = this.extractTextFromContext(context);
 
-    // Use keyword-based classification for MVP
+    // Use BERT-based classification
+    const { classifyContextIntent } = require('./IntentClassifier');
+
+    try {
+      // Load BERT model if not already loaded
+      const isReady = await classifyContextIntent.isReady();
+
+      if (!isReady) {
+        console.log('[ContextAnalyzer] BERT model not ready, initializing...');
+        const loaded = await classifyContextIntent.loadModel();
+        if (!loaded) {
+          // Fallback to keyword classification if BERT fails
+          console.log('[ContextAnalyzer] BERT loading failed, using keyword fallback');
+          return this.classifyByKeywords(text);
+        }
+      }
+
+      // Run BERT classification
+      const result = await classifyContextIntent.classifyIntent(text, {
+        minConfidence: 0.6,
+        enableFallback: true,
+      });
+
+      return result;
+    } catch (error) {
+      console.error('[ContextAnalyzer] BERT classification failed:', error);
+      // Fallback to keyword-based classification
+      return this.classifyByKeywords(text);
+    }
+  }
+
+  /**
+   * Fallback keyword-based classification (original implementation)
+   */
+  private async classifyByKeywords(text: string): Promise<IntentClassificationResult> {
+    // Original keyword-based implementation
     const scores: Record<string, number> = {};
 
     for (const [intent, keywords] of Object.entries(INTENT_KEYWORDS)) {
@@ -215,7 +250,7 @@ export class ContextAnalyzerService implements IContextAnalyzer {
       .slice(0, 2);
 
     return {
-      intent: primaryIntent,
+      intent: primaryIntent as string,
       confidence,
       alternatives: alternatives.length > 0 ? alternatives : undefined,
     };
