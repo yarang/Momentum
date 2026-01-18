@@ -174,7 +174,7 @@ export class TaskDAO {
    */
   async getById(id: string): Promise<Task | null> {
     const row = await this.db.getById<TaskRow>('tasks', id);
-    if (!row) return null;
+    if (!row) {return null;}
 
     const entities = await this.getEntitiesForTask(id);
     const actions = await this.getActionsForTask(id);

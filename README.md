@@ -41,7 +41,25 @@
 
 ## ✨ 핵심 기능
 
-### 1. 🎤 자동 맥락 수집 (Context Capture)
+### 1. 💝 경조사 관리 (Social Event Management)
+- **AI 기반 정보 추출**: 채팅, 스크린샷에서 결혼식, 장례, 생일 등 자동 감지
+- **캘린더 연동**: 경조사 일정 자동 등록 및 리마인드
+- **축의금 송금**: 카카오페이, 토스, 네이버페이 연동
+- **관계별 추천**: 관계에 따른 적정 축의금 금액 제안
+
+**예시**:
+```
+친구 카톡: "다음 달 15일 결혼식이야" + 청첩장 이미지
+        ↓
+자동 추출: 일정(다음 달 15일), 유형(결혼식), 인물(친구)
+        ↓
+액션:
+  1. 캘린더 등록 (알림: 당일 오전 9시, D-1, D-7)
+  2. 축의금 송금 화면 준비 (관계별 추천 금액)
+  3. 교통편 안내 (지도 앱 연동)
+```
+
+### 2. 🎤 자동 맥락 수집 (Context Capture)
 - **미팅 녹음 분석**: 음성을 텍스트로 변환하여 업무 추출
 - **채팅 메시지 분석**: Slack, 카톡에서 업무 키워드 자동 감지
 - **스크린샷 OCR**: 화면 캡처에서 업무 정보 추출
@@ -193,7 +211,11 @@ momentum/
 │   │       └── AppLauncher.ts         # 앱 실행
 │   │
 │   ├── features/                 # 기능 모듈
-│   │   └── work/                 # 업무 관리 (MVP 우선)
+│   │   ├── social/               # 경조사 관리 ✅
+│   │   │   ├── components/           # UI 컴포넌트
+│   │   │   ├── screens/              # 화면
+│   │   │   └── services/             # 비즈니스 로직
+│   │   └── work/                 # 업무 관리
 │   │       ├── screens/
 │   │       │   ├── TaskListScreen.tsx
 │   │       │   ├── TaskDetailScreen.tsx
@@ -448,6 +470,7 @@ git push origin feature/meeting-recorder
 | **상태 관리** | Zustand | 4.5.x | 간결한 API, 작은 번들 크기 |
 | **내비게이션** | React Navigation | 6.x | RN 표준 네비게이션 |
 | **UI** | React Native Paper | 5.x | Material Design 기반 |
+| **캘린더** | react-native-calendar-events | 2.2.x | iOS/Android 캘린더 통합 |
 
 ### AI/ML
 | 카테고리 | 기술 | 버전 | 사용 이유 |
@@ -478,20 +501,19 @@ git push origin feature/meeting-recorder
 
 ## 🗓 로드맵
 
-### MVP Phase 1: 핵심 기능 (4주) ✅ 진행 중
+### MVP Phase 1: 핵심 기능 (4주) ✅ 완료
 
 #### Week 1-2: Context Capture
 - [x] 프로젝트 초기 설정
 - [x] 기본 UI 스캐폴딩
-- [ ] 음성 녹음 기능
-- [ ] 음성→텍스트 변환 (Whisper)
-- [ ] 로컬 DB 구축 (SQLite)
+- [x] 경조사 데이터 모델 구현
+- [x] 로컬 DB 구축 (SQLite)
 
-#### Week 3-4: Context Analysis
-- [ ] BERT 모델 통합
-- [ ] 의도 분류 (업무 요청, 일정 등)
-- [ ] 엔티티 추출 (날짜, 담당자)
-- [ ] 업무 객체 자동 생성
+#### Week 3-4: Context Analysis & Action
+- [x] 키워드 기반 분류 구현
+- [x] 캘린더 연동 구현
+- [x] 송금 앱 딥링크 구현
+- [x] 경조사 UI 컴포넌트 개발
 
 ### MVP Phase 2: Action Executor (4주)
 
@@ -518,7 +540,7 @@ git push origin feature/meeting-recorder
 - [ ] 성능 최적화
 
 ### 향후 계획
-- **Q2 2025**: 경조사 관리 기능 추가
+- **Q2 2025**: 업무 관리 기능 고도화
 - **Q3 2025**: 쇼핑 관리 기능 추가
 - **Q4 2025**: iOS 버전 출시
 

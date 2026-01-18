@@ -631,7 +631,172 @@ export class EntityExtractor {
 
 ---
 
-### 5. Task Management Module
+### 5. Social Event Management Module
+
+#### Data Model
+
+The SocialEvent module manages various social events including weddings, funerals, birthdays, and other celebrations.
+
+```typescript
+// src/shared/models/SocialEvent.types.ts
+interface SocialEvent {
+  id: string;
+  type: SocialEventType;      // 'wedding', 'funeral', 'birthday', etc.
+  status: SocialEventStatus;  // 'pending', 'confirmed', 'completed', 'cancelled'
+  priority: SocialEventPriority;
+  title: string;
+  description: string | null;
+  eventDate: Date;
+  location: SocialEventLocation | null;
+  contact: SocialEventContact | null;
+  giftAmount: number | null;
+  giftSent: boolean;
+  giftSentDate: Date | null;
+  reminderSet: boolean;
+  reminderDate: Date | null;
+  calendarEventId: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+#### Event Extraction Flow
+
+```mermaid
+flowchart TD
+    A[Input Text/Image] --> B{Intent Classification}
+    B -->|Wedding| C[Wedding Event]
+    B -->|Funeral| D[Funeral Event]
+    B -->|Birthday| E[Birthday Event]
+    B -->|Other| F[Other Event]
+
+    C --> G[Entity Extraction]
+    D --> G
+    E --> G
+    F --> G
+
+    G --> H[Extract: Date/Time]
+    G --> I[Extract: Location]
+    G --> J[Extract: Contact]
+    G --> K[Extract: Amount]
+
+    H --> L[Create SocialEvent]
+    I --> L
+    J --> L
+    K --> L
+
+    L --> M{User Confirm?}
+    M -->|Yes| N[Save to Database]
+    M -->|No| O[Edit Event]
+
+    N --> P[Calendar Integration]
+    O --> L
+
+    P --> Q[Schedule Reminders]
+    Q --> R[Prepare Payment Links]
+
+    R --> S[Complete]
+```
+
+#### Database Schema
+
+```sql
+-- social_events table
+CREATE TABLE social_events (
+  id TEXT PRIMARY KEY,
+  type TEXT NOT NULL,          -- 'wedding', 'funeral', 'birthday', etc.
+  status TEXT NOT NULL,        -- 'pending', 'confirmed', 'completed', 'cancelled'
+  priority TEXT NOT NULL,      -- 'low', 'medium', 'high', 'urgent'
+  title TEXT NOT NULL,
+  description TEXT,
+  event_date INTEGER NOT NULL, -- Unix timestamp
+  location_json TEXT,          -- JSON encoded SocialEventLocation
+  contact_json TEXT,          -- JSON encoded SocialEventContact
+  gift_amount INTEGER,
+  gift_sent INTEGER DEFAULT 0,
+  gift_sent_date INTEGER,
+  reminder_set INTEGER DEFAULT 0,
+  reminder_date INTEGER,
+  calendar_event_id TEXT,
+  notes TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX idx_social_events_date ON social_events(event_date);
+CREATE INDEX idx_social_events_type ON social_events(type);
+CREATE INDEX idx_social_events_status ON social_events(status);
+```
+
+#### Calendar Integration
+
+```typescript
+// src/services/calendar/CalendarService.ts
+class CalendarService {
+  // Add social event to device calendar
+  async addEvent(event: SocialEvent): Promise<string | null>;
+
+  // Update existing calendar event
+  async updateEvent(calendarId: string, event: SocialEvent): Promise<string | null>;
+
+  // Remove from calendar
+  async removeEvent(calendarId: string): Promise<boolean>;
+
+  // Sync with calendar (add or update)
+  async syncEvent(event: SocialEvent): Promise<string | null>;
+
+  // Find events in date range
+  async findEvents(startDate: Date, endDate: Date): Promise<any[]>;
+}
+```
+
+#### Payment Deep Link Service
+
+```typescript
+// src/services/payment/PaymentDeepLinkService.ts
+class PaymentDeepLinkService {
+  // Create KakaoPay transfer link
+  createKakaoPayLink(receiver: PaymentReceiver): string;
+
+  // Create Toss transfer link
+  createTossLink(receiver: PaymentReceiver): string;
+
+  // Create NaverPay transfer link
+  createNaverPayLink(receiver: PaymentReceiver): string;
+
+  // Get recommended gift amount by relationship
+  getRecommendedAmount(options: RecommendationOptions): number;
+
+  // Create all payment links
+  createPaymentLinks(options: PaymentOptions): PaymentLinks;
+}
+```
+
+#### AI/ML Integration
+
+The module uses keyword-based classification with plans for TensorFlow Lite integration:
+
+```typescript
+// src/services/socialEvent/SocialEventExtractor.ts
+class SocialEventExtractor {
+  // Classify event intent from text
+  classifyIntent(text: string): IntentResult;
+
+  // Extract entities (dates, locations, contacts, amounts)
+  extractEntities(text: string): ExtractedEntities;
+
+  // Infer priority from text
+  inferPriority(text: string): SocialEventPriority;
+
+  // Comprehensive extraction
+  extract(text: string): ExtractionResult;
+}
+```
+
+---
+
+### 6. Task Management Module
 
 #### 데이터 모델
 ```typescript

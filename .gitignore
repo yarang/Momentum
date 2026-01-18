@@ -2,7 +2,7 @@
 # MoAI-ADK Package Distribution .gitignore
 # ============================================
 # Version: 0.33.0
-# Updated: 2026-01-10
+# Updated: 2026-01-18 (Added MoAI Framework privacy settings)
 # Purpose: Essential patterns for user projects
 # ============================================
 
@@ -22,7 +22,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.mypy_cache/
+*.mypy_cache/
 .ruff_cache/
 *.db
 *.sqlite
@@ -36,14 +36,13 @@ __pycache__/
 venv/
 .venv/
 env/
-.env/
 .uv_cache/
 .uv-cache/
 
 # ===========================================
 # Test Coverage
 # ===========================================
-.coverage
+coverage
 coverage.json
 htmlcov/
 
@@ -79,7 +78,7 @@ htmlcov/
 .VolumeIcon.icns
 
 # Windows
-[Dd]esktop.ini
+[Dd]Desktop.ini
 Thumbs.db
 ehthumbs.db
 
@@ -143,7 +142,7 @@ secret-*.*
 
 # ===========================================
 # Claude Code Configuration
-# ===========================================
+# ============================================
 .claude/settings.local.json
 .claude/settings.local.*.json
 .claude/.env.local*
@@ -152,9 +151,9 @@ secret-*.*
 # Skill-specific credentials
 .claude/skills/*/.env*
 .claude/skills/*/secrets/
-.claude/skills/*/*/*secret*
+.claude/skills/*/*/*secret*/
 .claude/skills/*/*/*key*
-.claude/skills/*/*/*token*
+.claude/skills/*/*/*token*/
 
 # ===========================================
 # Node.js (for docs/Nextra)
@@ -174,7 +173,27 @@ dist-ssr/
 
 # ===========================================
 # Deployment & CI/CD
-# ===========================================
+# ============================================
 .vercel/
 .netlify/
 .firebase/
+
+# ===========================================
+# MoAI Framework (Added 2026-01-18)
+# ============================================
+
+# MoAI Runtime Data (Privacy)
+.moai/logs/
+.moai/memory/
+.moai/reports/
+.moai/cache/
+.moai/temp/
+*.session-*.jsonl
+agent-*.jsonl
+
+# MoAI Backups (Local only)
+.moai-backups/
+
+# ==========================================
+# END OF .gitignore
+# ==========================================

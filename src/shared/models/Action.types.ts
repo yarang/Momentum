@@ -16,7 +16,8 @@ export type ActionType =
   | 'shopping'
   | 'task'
   | 'navigation'
-  | 'communication';
+  | 'communication'
+  | 'notification';
 
 /**
  * Base action interface
@@ -46,6 +47,10 @@ export interface BaseAction {
   executedAt?: number;
   /** Error message if execution failed */
   error?: string;
+  /** Optional tags for categorization */
+  tags?: string[];
+  /** Optional metadata for action-specific parameters */
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -153,6 +158,21 @@ export interface CommunicationAction extends BaseAction {
 }
 
 /**
+ * Notification action for sending reminders and alerts
+ */
+export interface NotificationAction extends BaseAction {
+  type: 'notification';
+  /** Notification title */
+  notificationTitle: string;
+  /** Notification message body */
+  notificationBody: string;
+  /** Optional scheduled delivery time */
+  scheduledTime?: number;
+  /** Optional notification priority */
+  priority?: 'low' | 'default' | 'high';
+}
+
+/**
  * Union type of all possible actions
  */
 export type Action =
@@ -161,7 +181,8 @@ export type Action =
   | ShoppingAction
   | TaskAction
   | NavigationAction
-  | CommunicationAction;
+  | CommunicationAction
+  | NotificationAction;
 
 /**
  * Execution result for an action
@@ -175,6 +196,13 @@ export interface ActionResult {
   data?: unknown;
   /** Optional error message */
   error?: string;
-  /** Timestamp of execution */
-  executedAt: number;
+  /** Execution timestamp (required) */
+  timestamp: number;
+  /** Timestamp of execution (alias for timestamp, for backward compatibility) */
+  executedAt?: number;
+  /** Optional metadata with additional result information */
+  metadata?: {
+    message?: string;
+    [key: string]: unknown;
+  };
 }

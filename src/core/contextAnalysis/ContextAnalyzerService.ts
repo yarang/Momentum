@@ -273,10 +273,10 @@ export class ContextAnalyzerService implements IContextAnalyzer {
       entities.push({
         id: uuidv4(),
         type: 'date' as EntityType,
-        rawText: dateResult.rawText || dateResult.originalText,
+        rawText: dateResult.rawText,
         value: dateResult.isoDate,
         confidence: dateResult.confidence,
-      });
+      } as Entity);
     }
 
     // Extract amounts
@@ -287,11 +287,12 @@ export class ContextAnalyzerService implements IContextAnalyzer {
         type: 'amount' as EntityType,
         rawText: amount.rawText,
         value: amount.amount.toString(),
+        currency: amount.currency,
         confidence: 0.9,
         metadata: {
           currency: amount.currency,
         },
-      });
+      } as Entity);
     }
 
     // Extract phone numbers
@@ -303,7 +304,7 @@ export class ContextAnalyzerService implements IContextAnalyzer {
         rawText: phone,
         value: phone,
         confidence: 0.85,
-      });
+      } as Entity);
     }
 
     // Extract emails
@@ -315,7 +316,7 @@ export class ContextAnalyzerService implements IContextAnalyzer {
         rawText: email,
         value: email,
         confidence: 0.95,
-      });
+      } as Entity);
     }
 
     // Extract locations (simple keyword-based)
@@ -340,7 +341,7 @@ export class ContextAnalyzerService implements IContextAnalyzer {
           rawText: keyword,
           value: keyword,
           confidence: 0.7,
-        });
+        } as Entity);
       }
     }
 
@@ -356,7 +357,7 @@ export class ContextAnalyzerService implements IContextAnalyzer {
           rawText: name,
           value: name,
           confidence: 0.75,
-        });
+        } as Entity);
       }
     }
 
@@ -387,14 +388,13 @@ export class ContextAnalyzerService implements IContextAnalyzer {
             id: uuidv4(),
             type: 'calendar' as ActionType,
             title: '일정 등록',
-            description: `캘린더에 일정을 등록합니다`,
+            description: '캘린더에 일정을 등록합니다',
             entities: [dateEntity],
-            confidence: 0.9,
+            sourceContextId: context.id,
             status: 'pending',
-            metadata: {
-              date: dateEntity.value,
-            },
-          });
+            priority: 3,
+            createdAt: Date.now(),
+          } as Action);
         }
         break;
 
@@ -405,9 +405,11 @@ export class ContextAnalyzerService implements IContextAnalyzer {
           title: '위시리스트 추가',
           description: '쇼핑 위시리스트에 추가합니다',
           entities: entities.filter((e) => e.type === 'amount'),
-          confidence: 0.8,
+          sourceContextId: context.id,
           status: 'pending',
-        });
+          priority: 2,
+          createdAt: Date.now(),
+        } as Action);
 
         if (amountEntity) {
           actions.push({
@@ -416,9 +418,11 @@ export class ContextAnalyzerService implements IContextAnalyzer {
             title: '가격 알림 설정',
             description: '가격 하락 시 알림을 받습니다',
             entities: [amountEntity],
-            confidence: 0.85,
+            sourceContextId: context.id,
             status: 'pending',
-          });
+            priority: 2,
+            createdAt: Date.now(),
+          } as Action);
         }
         break;
 
@@ -430,13 +434,15 @@ export class ContextAnalyzerService implements IContextAnalyzer {
             title: '업무 등록',
             description: '업무 관리 도구에 할 일을 등록합니다',
             entities: [dateEntity],
-            confidence: 0.9,
+            sourceContextId: context.id,
             status: 'pending',
+            priority: 3,
+            createdAt: Date.now(),
             metadata: {
               priority: this.calculatePriority(text, dateEntity),
               deadline: dateEntity.value,
             },
-          });
+          } as Action);
         }
         break;
 
@@ -450,9 +456,11 @@ export class ContextAnalyzerService implements IContextAnalyzer {
             entities: [dateEntity, locationEntity].filter(
               (e): e is Entity => e !== undefined
             ),
-            confidence: 0.9,
+            sourceContextId: context.id,
             status: 'pending',
-          });
+            priority: 4,
+            createdAt: Date.now(),
+          } as Action);
         }
 
         if (amountEntity) {
@@ -462,9 +470,11 @@ export class ContextAnalyzerService implements IContextAnalyzer {
             title: '축의금 송금 준비',
             description: '송금 앱을 실행하고 금액을 입력합니다',
             entities: [amountEntity],
-            confidence: 0.85,
+            sourceContextId: context.id,
             status: 'pending',
-          });
+            priority: 3,
+            createdAt: Date.now(),
+          } as Action);
         }
         break;
 
@@ -476,9 +486,11 @@ export class ContextAnalyzerService implements IContextAnalyzer {
             title: '송금 실행',
             description: '송금 앱을 실행하고 금액을 입력합니다',
             entities: [amountEntity],
-            confidence: 0.9,
+            sourceContextId: context.id,
             status: 'pending',
-          });
+            priority: 4,
+            createdAt: Date.now(),
+          } as Action);
         }
         break;
     }
@@ -492,12 +504,14 @@ export class ContextAnalyzerService implements IContextAnalyzer {
         title: '긴급 알림',
         description: '즉시 확인이 필요한 알림을 설정합니다',
         entities: [],
-        confidence: 0.95,
+        sourceContextId: context.id,
         status: 'pending',
+        priority: 5,
+        createdAt: Date.now(),
         metadata: {
           urgency,
         },
-      });
+      } as Action);
     }
 
     return actions;
@@ -587,9 +601,9 @@ export class ContextAnalyzerService implements IContextAnalyzer {
    * Helper: Extract text content from context data
    */
   private extractTextFromContext(context: Context): string {
-    const data = context.data as any;
+    const data = context.data;
 
-    switch (context.type) {
+    switch (data.source) {
       case 'chat':
         return data.message || '';
       case 'voice':
@@ -610,8 +624,8 @@ export class ContextAnalyzerService implements IContextAnalyzer {
    */
   private calculatePriority(text: string, _dateEntity: Entity): TaskPriority {
     const urgency = detectUrgency(text);
-    if (urgency >= 4) return 'high';
-    if (urgency >= 3) return 'medium';
+    if (urgency >= 4) {return 'high';}
+    if (urgency >= 3) {return 'medium';}
     return 'low';
   }
 }

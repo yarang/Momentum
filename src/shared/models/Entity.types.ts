@@ -66,13 +66,18 @@ export interface AmountEntity {
   /** Entity type discriminator */
   type: 'amount';
   /** Numeric value */
-  value: number;
+  value: string;
   /** Currency code (ISO 4217) */
   currency: string;
   /** Original text that was parsed */
   rawText: string;
   /** Confidence score from extraction (0-1) */
   confidence: number;
+  /** Optional metadata for additional information */
+  metadata?: {
+    currency?: string;
+    [key: string]: unknown;
+  };
 }
 
 /**

@@ -7,7 +7,7 @@
  * @see https://www.tensorflow.org/lite/on-device/intents/overview
  */
 
-import { loadTensorflowModel, Model } from 'react-native-fast-tflite';
+import { Model } from 'react-native-fast-tflite';
 import { Platform } from 'react-native';
 
 /**

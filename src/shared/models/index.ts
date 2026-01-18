@@ -8,3 +8,4 @@ export * from './Entity.types';
 export * from './Context.types';
 export * from './Action.types';
 export * from './Task.types';
+export * from './SocialEvent.types';

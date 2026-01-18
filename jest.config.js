@@ -22,7 +22,7 @@ module.exports = {
 
   // Transform ignore patterns - exclude node_modules from transformation
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|@react-native-async-storage)/)',
+    'node_modules/(?!(react-native|@react-native|@react-navigation|@react-native-async-storage|uuid)/)',
   ],
 
   // Module name mapper for path aliases

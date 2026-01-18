@@ -35,6 +35,7 @@
 export { DatabaseService, getDatabase, closeDatabase, type DatabaseConfig } from './DatabaseService';
 export { ContextDAO } from './ContextDAO';
 export { TaskDAO } from './TaskDAO';
+export { SocialEventDAO } from './SocialEventDAO';
 export {
   ALL_TABLES,
   CONTEXT_TABLE,
@@ -44,6 +45,20 @@ export {
   TASK_ENTITY_TABLE,
   TASK_ACTION_TABLE,
 } from './Database.schema';
+export {
+  SOCIAL_EVENT_TABLE,
+  SOCIAL_EVENT_INDEXES,
+  SOCIAL_EVENT_SCHEMA_VERSION,
+  validateSocialEventTable,
+  getSocialEventTableVersion,
+} from './SocialEvent.schema';
+
+/**
+ * Get SocialEvent DAO instance
+ */
+export function getSocialEventDAO(db: DatabaseService): SocialEventDAO {
+  return new SocialEventDAO(db);
+}
 
 /**
  * Get Context DAO instance

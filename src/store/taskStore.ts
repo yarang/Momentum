@@ -313,7 +313,7 @@ export const useTaskStore = create<TaskState>()(
 
         if (options.deadlineRange) {
           filtered = filtered.filter((task) => {
-            if (!task.deadline) return false;
+            if (!task.deadline) {return false;}
             return (
               task.deadline >= options.deadlineRange!.start &&
               task.deadline <= options.deadlineRange!.end
