@@ -197,3 +197,7 @@ agent-*.jsonl
 # ==========================================
 # END OF .gitignore
 # ==========================================
+android/.gradle/
+android/?/
+android/local.properties
+android/get-docker.sh

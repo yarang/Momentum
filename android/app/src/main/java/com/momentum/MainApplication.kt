@@ -1,4 +1,4 @@
-package com.temprn
+package com.momentum
 
 import android.app.Application
 import com.facebook.react.PackageList

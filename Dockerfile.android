@@ -1,0 +1,57 @@
+# React Native Android Build Dockerfile
+FROM ubuntu:22.04
+
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    openjdk-17-jdk \
+    wget \
+    unzip \
+    zip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set JAVA_HOME dynamically
+RUN JAVA_HOME_DIR=$(ls -d /usr/lib/jvm/java-17-openjdk-* 2>/dev/null | head -1) && \
+    echo "JAVA_HOME_DIR=$JAVA_HOME_DIR" && \
+    echo "export JAVA_HOME=$JAVA_HOME_DIR" >> /etc/bash.bashrc && \
+    echo "export PATH=\$PATH:\$JAVA_HOME/bin" >> /etc/bash.bashrc
+
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-arm64
+ENV PATH=$PATH:$JAVA_HOME/bin
+
+# Install Node.js 20 LTS
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Android SDK Command Line Tools
+ENV ANDROID_SDK_ROOT=/opt/android-sdk
+ENV PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/build-tools/34.0.0
+
+RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
+    cd ${ANDROID_SDK_ROOT}/cmdline-tools && \
+    wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip && \
+    unzip -q commandlinetools-linux-11076708_latest.zip && \
+    rm commandlinetools-linux-11076708_latest.zip && \
+    mv cmdline-tools latest
+
+# Accept Android SDK licenses and install required packages
+RUN yes | sdkmanager --licenses && \
+    sdkmanager "platform-tools" \
+               "platforms;android-34" \
+               "build-tools;34.0.0" \
+               "ndk;25.1.8937393"
+
+# Set up working directory
+WORKDIR /workspace
+
+# Verify installations
+RUN java -version && \
+    node --version && \
+    npm --version
+
+CMD ["/bin/bash"]
