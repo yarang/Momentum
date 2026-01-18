@@ -2,10 +2,12 @@
  * Database Schema Definitions
  *
  * SQLite database schema for Momentum app with encrypted storage.
- * Tables: contexts, tasks, entities, actions
+ * Tables: contexts, tasks, entities, actions, social_events
  *
  * @see https://github.com/margelo/react-native-quick-sqlite
  */
+
+export { SOCIAL_EVENT_TABLE, SOCIAL_EVENT_INDEXES } from './SocialEvent.schema';
 
 /**
  * Context table schema
@@ -143,5 +145,7 @@ export const ALL_TABLES = [
   ACTION_TABLE,
   TASK_ENTITY_TABLE,
   TASK_ACTION_TABLE,
+  SOCIAL_EVENT_TABLE,
   ...INDEXES,
+  ...SOCIAL_EVENT_INDEXES,
 ];

@@ -85,7 +85,7 @@ export class ContextDAO {
    */
   async getById(id: string): Promise<Context | null> {
     const row = await this.db.getById<ContextRow>('contexts', id);
-    if (!row) return null;
+    if (!row) {return null;}
 
     const entities = await this.getEntitiesForContext(id);
     return this.rowToContext(row, entities);
