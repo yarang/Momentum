@@ -6,3 +6,4 @@
 
 export { useTaskStore } from './taskStore';
 export { useContextStore } from './contextStore';
+export { useSocialEventStore } from './socialEventStore';
